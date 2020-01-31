@@ -369,8 +369,8 @@ exit
 
 The resulting query will look something like this:
 
-```shell
-> SELECT * FROM "ping" LIMIT 2
+```SQL
+> SELECT * FROM "ping" LIMIT 2;
 name: ping
 time                avg_rtt dst           dst_pop failed loss public_ip      src_pop src_slug
 ----                ------- ---           ------- ------ ---- ---------      ------- --------
@@ -432,3 +432,60 @@ our local instance of InfluxDB and our `metricsdb` database:
 After completing this step; navigate back to your `Home Dashboard`.
 
 #### Creating our First Dashboard
+
+Let's add our very first dashboard so we can actually dive into our Performance metrics!
+
+From your `Home Dashboard` select `New dashboard`. You will be redirected to the following page:
+
+![grafana_new_dashboard](/images/grafana_new_dashboard.png)
+
+Select the `Boom Table` panel type and then edit the panel:
+
+![grafana_boom_table_edit](/images/grafana_boom_table_edit.png)
+
+From the edit page for our panel change the `Data Souce` to `metricsdb`:
+
+![grafana_boom_table_data_source](/images/grafana_boom_table_data_source.png)
+
+Now let's `Toggle Edit Mode` so we can write raw InfluxQL:
+
+![grafana_boom_table_toggle_edit_mode](/images/grafana_boom_table_toggle_edit_mode.png)
+
+Time to query our database! Let's add the following simple query to get the average ICMP ping
+latency between all of our `Global Scouter API Workload` instances:
+
+```SQL
+SELECT MEAN("avg_rtt") FROM "ping" WHERE $timeFilter AND "dst_pop" != 'Unknown' GROUP BY "dst_pop", "src_pop";
+```
+
+Let's also setup the `ALIAS BY` field to be used in table formatting next:
+
+```shell
+$tag_src_pop.$tag_dst_pop
+```
+
+Once added your query should look like this:
+
+![grafana_boom_table_latency_metric_query](/images/grafana_boom_table_latency_metric_query.png)
+
+Navigate to the `Patterns` tab and modify the following field values:
+
+* *Pattern*
+  * **Row Name**: `_0_`
+  * **Col Name**: `_1_`
+* *Stats*
+  * **Stat**: `Current`
+  * **Format**: `milliseconds (ms)`
+  * **Decimals**: `0`
+* *Thresholds*
+  * **Thresholds**: `250,500,1000`
+  * **Change BG Color based on thresholds?**: :white_check_mark:
+  * **BG Colors for thresholds**: `green|yellow|orange|red`
+
+Once modified our `Patterns` tab should look like this:
+
+![grafana_boom_table_patterns](/images/grafana_boom_table_patterns.png)
+
+Once completed navigate to the `General` tab take a look at that data!
+
+![grafana_boom_table_finished](/images/grafana_boom_table_finished.png)
