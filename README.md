@@ -86,9 +86,7 @@ README to ensure that all [Prerequisities](#prerequisities) are met and that you
 Let's begin our journey by creating our first Edge Compute workload within the StackPath 2.0
 portal.
 
-#### Creating the Workload.
-
-![create_workload_start](/images/create_workload_start.png)
+#### Creating the Workload
 
 ![vm_name_and_type](/images/vm_name_and_type.png)
 
@@ -96,13 +94,38 @@ portal.
 
 ![vm_spec_storage_and_deployment](/images/vm_spec_storage_and_deployment.png)
 
-![create_workload_finish](/images/create_workload_finish.png)
-
 ![vm_quick_overview_scheduling](/images/vm_quick_overview_scheduling.png)
 
 ![vm_quick_overview_running](/images/vm_quick_overview_running.png)
 
 ![vm_information](/images/vm_information.png)
+
+#### Creating an Inbound Network Policy to Restrict Access to Grafana
+
+![vm_default_network_policy](/images/vm_default_network_policy.png)
+
+One easy way to get your public IP is by running the following:
+```shell
+curl -4 icanhazip.com
+```
+
+Take the resulting IP address and fill out the following:
+
+![vm_grafana_network_policy](/images/vm_grafana_network_policy.png)
+
+#### Logging into our Workload Instance
+
+```shell
+ssh centos@151.139.188.43
+```
+
+#### Cloning the Workshop Repository and Setting Up Additional Dependencies
+
+```shell
+sudo yum install git wget python3
+git clone https://github.com/aaroncouch/developerweek_2020_workshop.git
+sudo python3 -m pip install requests
+```
 
 ### Part 2: Creating the Globally Deployed Scouter API Workload
 
