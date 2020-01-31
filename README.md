@@ -417,7 +417,8 @@ http://151.139.188.43:3000/login
 
 ![grafana_login](/images/grafana_login.png)
 
-The default login credentials for Grafana are admin/admin. Please change this in the next prompt.
+The default login credentials for Grafana are **admin**/**admin**.
+Please change this in the next prompt.
 
 Once you've completed the login process you'll be redirected to your `Home Dashboard`:
 
