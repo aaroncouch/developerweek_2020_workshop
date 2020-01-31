@@ -12,6 +12,11 @@ StackPath's Edge Compute platform and recently open-sourced API project, Scouter
     * [InfluxDB](#influxdb)
     * [Grafana](#grafana)
 * [Workshop Guide](#workshop_guide)
+  * [Part 1: Creating the Performance Metric Collection Workload](#workshop_guide_pt_1)
+  * [Part 2: Creating the Globally Deployed Scouter API Workload](#workshop_guide_pt_2)
+  * [Part 3: Installing and Configuring InfluxDB on our VM](#workshop_guide_pt_3)
+  * [Part 4: Installing and Configuring Telegraf on our VM](#workshop_guide_pt_4)
+  * [Part 5: Installing and Configuring Grafana on our VM](#workshop_guide_pt_5)
 
 <a name="getting_started"></a>
 ## Getting Started
@@ -81,6 +86,7 @@ Before proceeding please be sure to review the [Getting Started](#getting_starte
 README to ensure that all [Prerequisities](#prerequisities) are met and that you understand the
 [Core Components](#core_components) of this guide.
 
+<a name="workshop_guide_pt_1"></a>
 ### Part 1: Creating the Performance Metric Collection Workload
 
 Let's begin our journey by creating our first Edge Compute workload within the StackPath 2.0
@@ -127,6 +133,7 @@ git clone https://github.com/aaroncouch/developerweek_2020_workshop.git
 sudo python3 -m pip install requests
 ```
 
+<a name="workshop_guide_pt_2"></a>
 ### Part 2: Creating the Globally Deployed Scouter API Workload
 
 #### Creating the Workload
@@ -160,6 +167,7 @@ public IP address of the running Scouter API instances and run the following fro
 curl -sSXGET -H "Authorization: secret" "http://151.139.47.79:8000/api/v1.0/status"
 ```
 
+<a name="workshop_guide_pt_3"></a>
 ### Part 3: Installing and Configuring InfluxDB on our VM
 
 Back to our VM. Let's continue there by installing and configuring InfluxDB so Telegraf has
@@ -198,8 +206,8 @@ exit
 Once completed let's quickly add our admin credentials to our environment:
 
 ```shell
-echo "export INFLUX_USERNAME=admin" >> ~/.bash_profile
-echo "export INFLUX_PASSWORD=[REDACTED]" >> ~/.bash_profile
+echo "export INFLUX_USERNAME='admin'" >> ~/.bash_profile
+echo "export INFLUX_PASSWORD='changeme'" >> ~/.bash_profile
 source ~/.bash_profile
 ```
 
@@ -225,6 +233,7 @@ Restart the service for good measure:
 sudo systemctl restart influxdb
 ```
 
+<a name="workshop_guide_pt_4"></a>
 ### Part 4: Installing and Configuring Telegraf on our VM
 
 Let's get the Telegraf server agent installed so we can actually start pulling peformance metrics
@@ -338,4 +347,88 @@ Monitor our on-disk logging to ensure that no errors are present:
 tail -f /var/log/telegraf/telegraf.log
 ```
 
+#### Validate that the Performance Metrics are being Written to InfluxDB
+
+Let's quickly validate that data is being inserted before we proceed to the next part of the
+workshop.
+
+Log back into InfluxDB:
+
+```shell
+influx
+```
+
+Query our `metricsdb` and `ping` measurement for metrics:
+
+```shell
+USE "metricsdb";
+SHOW MEASUREMENTS;
+SELECT * FROM "ping" LIMIT 2;
+exit
+```
+
+The resulting query will look something like this:
+
+```shell
+> SELECT * FROM "ping" LIMIT 2
+name: ping
+time                avg_rtt dst           dst_pop failed loss public_ip      src_pop src_slug
+----                ------- ---           ------- ------ ---- ---------      ------- --------
+1580487181000000000 1.154   1.1.1.1       Unknown 0      0    151.139.188.43 ams     global-scouter-api-workload-global-ams-0
+1580487181000000000 113.432 151.139.87.14 fra     0      0    151.139.188.43 yyz     global-scouter-api-workload-global-yyz-0
+```
+
+<a name="workshop_guide_pt_5"></a>
 ### Part 5: Installing and Configuring Grafana on our VM
+
+At this point in the guide we should almost be ready to start visualizing some data.
+
+#### Installation of Grafana v5.3.4
+
+Let's get Grafana installed so we can start making some dashboards:
+
+```shell
+wget https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-5.3.4-1.x86_64.rpm
+sudo yum localinstall grafana-5.3.4-1.x86_64.rpm
+sudo systemctl enable grafana-server
+sudo systemctl start grafana-server
+systemctl status grafana-server
+```
+
+Let's also quickly install a plugin that adds a new panel type called `boomtable`:
+
+```shell
+sudo grafana-cli plugins install yesoreyeram-boomtable-panel
+sudo systemctl restart grafana-server
+```
+
+#### Configuration of Grafana within the Web Interface
+
+The `grafana-server` should now be up and running. From your local machine in your web browser
+please navigate to:
+
+**NOTE**: Please be sure to swap the following example IP address with yours.
+
+http://151.139.188.43:3000/login
+
+![grafana_login](/images/grafana_login.png)
+
+The default login credentials for Grafana are admin/admin. Please change this in the next prompt.
+
+Once you've completed the login process you'll be redirected to your `Home Dashboard`:
+
+![grafana_home_dashboard](/images/grafana_home_dashboard.png)
+
+
+#### Adding a new data source
+
+Let's add our InfluxDB `metricsdb` as a new data source within Grafana.
+
+From your `Home Dashboard` select `Add data source`. Here we can fill out the settings for
+our local instance of InfluxDB and our `metricsdb` database:
+
+![grafana_add_new_data_source](/images/grafana_add_new_data_source.png)
+
+After completing this step; navigate back to your `Home Dashboard`.
+
+#### Creating our First Dashboard
