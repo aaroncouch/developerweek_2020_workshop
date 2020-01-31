@@ -137,6 +137,9 @@ sudo python3 -m pip install requests
 <a name="workshop_guide_pt_2"></a>
 ### Part 2: Creating the Globally Deployed Scouter API Workload
 
+Let's continue by Deploying the Scouter API globally so we can collect performance metrics from
+anywhere that Edge Compute is available.
+
 #### Creating the Workload
 
 ![scouter_name_and_type](/images/scouter_name_and_type.png)
