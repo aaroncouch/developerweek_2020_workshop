@@ -502,8 +502,8 @@ Let's proceed with adding some more visualizations and dashboards in the next se
 
 Included in this workshop guide are two completely built Grafana dashboard JSON models.
 
-1.) [edge-compute-performance-mesh.json](/resources/edge-compute-performance-mesh.json)
-2.) [mesh-detail.json](/resources/mesh-detail.json)
+1. [edge-compute-performance-mesh.json](/resources/edge-compute-performance-mesh.json)
+2. [mesh-detail.json](/resources/mesh-detail.json)
 
 Let's go ahead and import both of these to our Grafana instance.
 
