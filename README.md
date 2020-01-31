@@ -482,6 +482,7 @@ Navigate to the `Patterns` tab and modify the following field values:
   * **Stat**: `Current`
   * **Format**: `milliseconds (ms)`
   * **Decimals**: `0`
+  * **Text Color**: `black`
 * *Thresholds*
   * **Thresholds**: `250,500,1000`
   * **Change BG Color based on thresholds?**: :white_check_mark:
