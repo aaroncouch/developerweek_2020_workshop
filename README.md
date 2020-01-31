@@ -17,6 +17,7 @@ StackPath's Edge Compute platform and recently open-sourced API project, Scouter
   * [Part 3: Installing and Configuring InfluxDB on our VM](#workshop_guide_pt_3)
   * [Part 4: Installing and Configuring Telegraf on our VM](#workshop_guide_pt_4)
   * [Part 5: Installing and Configuring Grafana on our VM](#workshop_guide_pt_5)
+  * [Exploring our Performance Data!](#workshop_guide_pt_6)
 
 <a name="getting_started"></a>
 ## Getting Started
@@ -489,3 +490,65 @@ Once modified our `Patterns` tab should look like this:
 Once completed navigate to the `General` tab take a look at that data!
 
 ![grafana_boom_table_finished](/images/grafana_boom_table_finished.png)
+
+Awesome! We've essentially created a Ping Latency Mesh Table where we can view the average
+latency between any given Edge Compute source PoP and Destination PoP.
+
+We can now tell where we perform well and where we don't.
+
+Let's proceed with adding some more visualizations and dashboards in the next section.
+
+#### Importing Dashboard JSON Models
+
+Included in this workshop guide are two completely built Grafana dashboard JSON models.
+
+1.) [edge-compute-performance-mesh.json](/resources/edge-compute-performance-mesh.json)
+2.) [mesh-detail.json](/resources/mesh-detail.json)
+
+Let's go ahead and import both of these to our Grafana instance.
+
+From your `Home Dashboard` select the `Create` option in the left panel:
+
+![grafana_create_import](/images/grafana_create_import.png)
+
+You should be presented with the following page:
+
+![grafana_dashboard_import](/images/grafana_dashboard_import.png)
+
+Go ahead and paste the contents of [edge-compute-performance-mesh.json](/resources/edge-compute-performance-mesh.json) into the `Or paste JSON` text box and select `Load`.
+
+You should now see the following:
+
+![grafana_dashboard_import_load](/images/grafana_dashboard_import_load.png)
+
+Go ahead and select `Import`.
+
+You should now see the same exact panel we created in the previous section but also and additional
+one, the `EdgeCompute Packet Loss Mesh`. This is very similar to our ping latency mesh but the
+metric being visualized this time is packet loss.
+
+![grafana_edge_compute_performance_mesh](/images/grafana_edge_compute_performance_mesh.png)
+
+Please follow the same exact steps for the [mesh-detail.json](/resources/mesh-detail.json) JSON
+model. Once completed you should have an additional dashboard called `Mesh Detail`:
+
+![grafana_mesh_detail](/images/grafana_mesh_detail.png)
+
+<a name="workshop_guide_pt_6"></a>
+### Part 6: Exploring our Performance Data!
+
+Our entire monitoring stack is now up and running and we're successfully visualizing our
+performance data being pulled remotely from around the globe via Scouter, or at least I hope we are!
+
+Let's do a quick deep dive into a small set of data. Let's say that I want to see how well the
+interconnectivity between our HKG (Hong Kong) and our JFK (New York) instances look:
+
+![grafana_explore_mesh_hkg_jfk](/images/grafana_explore_mesh_hkg_jfk.png)
+
+Clicking on the cell will redirect us to our `Mesh Detail` page with both the correct `src_pop`
+and `dst_pop` variables set to `hkg` and `jfk` respectively:
+
+![grafana_export_mesh_detail_hkg_jfk](/images/grafana_export_mesh_detail_hkg_jfk.png)
+
+On the `Mesh Detail` page we can explore our hisorical ping latency and packet loss data and
+see how well we performed over time!
