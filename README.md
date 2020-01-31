@@ -523,7 +523,7 @@ You should now see the following:
 
 Go ahead and select `Import`.
 
-You should now see the same exact panel we created in the previous section but also and additional
+You should now see the same exact panel we created in the previous section but also an additional
 one, the `EdgeCompute Packet Loss Mesh`. This is very similar to our ping latency mesh but the
 metric being visualized this time is packet loss.
 
