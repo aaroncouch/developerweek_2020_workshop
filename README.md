@@ -17,7 +17,7 @@ StackPath's Edge Compute platform and recently open-sourced API project, Scouter
   * [Part 3: Installing and Configuring InfluxDB on our VM](#workshop_guide_pt_3)
   * [Part 4: Installing and Configuring Telegraf on our VM](#workshop_guide_pt_4)
   * [Part 5: Installing and Configuring Grafana on our VM](#workshop_guide_pt_5)
-  * [Exploring our Performance Data!](#workshop_guide_pt_6)
+  * [Part 6: Exploring our Performance Data!](#workshop_guide_pt_6)
 
 <a name="getting_started"></a>
 ## Getting Started
