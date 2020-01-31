@@ -507,7 +507,7 @@ Included in this workshop guide are two completely built Grafana dashboard JSON 
 
 Let's go ahead and import both of these to our Grafana instance.
 
-From your `Home Dashboard` select the `Create` option in the left panel:
+From your `Home Dashboard` select the `Create` option and `Import` in the left panel:
 
 ![grafana_create_import](/images/grafana_create_import.png)
 
