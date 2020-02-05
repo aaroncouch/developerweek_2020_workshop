@@ -179,9 +179,11 @@ def main():
             dst_pop = "Unknown"
             avg_rtt = "9999.999"
             jitter = "0.0"
+            jitter_pct = "100.0"
             if not result["failed"]:
                 avg_rtt = result["rtt"]["avg"]
                 jitter = calc_jitter([reply["rtt_ms"] for reply in result["replies"]])
+                jitter_pct = (jitter/avg_rtt) * 100
             loss = result["loss"].replace("%", "")
             if cmd_args["dst"] is None:
                 for value in client.workload_instances.values():
