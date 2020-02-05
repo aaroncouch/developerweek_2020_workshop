@@ -35,7 +35,7 @@ To follow this guide please register and create a StackPath 2.0 account.
 <a name="core_components"></a>
 ### Core Components
 
-The following section will be a breif overview of the core coponents of this workshop and how
+The following section will be a brief overview of the core components of this workshop and how
 they will be used to develop our monitoring stack.
 
 * [StackPath Edge Compute](https://www.stackpath.com/products/edge-computing/)

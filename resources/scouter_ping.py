@@ -2,7 +2,7 @@
 # Written By: Aaron Couch
 # Contributions By:
 # Date: 2020-01-29
-# Updated On: 2020-01-30
+# Updated On: 2020-02-05
 # Python Version: 3.7.3
 # pylint: disable=locally-disabled, missing-docstring
 
@@ -111,7 +111,7 @@ class PingClient:
         url = f"http://{src_ip}:{self._scouter_port}/api/v1.0/tests"
         payload = {"ping": []}
         for dst in self._dst:
-            payload["ping"].append({"dst": dst, "count": 3})
+            payload["ping"].append({"dst": dst, "count": 5})
         results = self._scouter_api_handler(url, payload)
         return (instance, results)
 
@@ -128,6 +128,15 @@ class PingClient:
         mp_pool.close()
         mp_pool.join()
         return results
+
+def calc_jitter(latency_values):
+    jitter_values = []
+    for (index, latency) in enumerate(latency_values):
+        try:
+            jitter_values.append(abs(latency - latency_values[index + 1]))
+        except IndexError:
+            pass
+    return sum(jitter_values) / (len(latency_values) - 1)
 
 def get_public_ip():
     try:
@@ -169,8 +178,10 @@ def main():
             dst = result["dst"]
             dst_pop = "Unknown"
             avg_rtt = "9999.999"
+            jitter = "0.0"
             if not result["failed"]:
                 avg_rtt = result["rtt"]["avg"]
+                jitter = calc_jitter([reply["rtt_ms"] for reply in result["replies"]])
             loss = result["loss"].replace("%", "")
             if cmd_args["dst"] is None:
                 for value in client.workload_instances.values():
@@ -179,7 +190,7 @@ def main():
             print(
                 f"ping,src_slug={src_workload_slug},src_pop={src_workload_pop},dst={dst},"
                 f"dst_pop={dst_pop},public_ip={public_ip} failed=\"{int(result['failed'])}\","
-                f"loss=\"{loss}\",avg_rtt=\"{avg_rtt}\" {nanoseconds}"
+                f"loss=\"{loss}\",avg_rtt=\"{avg_rtt}\",jitter=\"{jitter}\" {nanoseconds}"
             )
 
 
