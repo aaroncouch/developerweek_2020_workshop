@@ -192,7 +192,8 @@ def main():
             print(
                 f"ping,src_slug={src_workload_slug},src_pop={src_workload_pop},dst={dst},"
                 f"dst_pop={dst_pop},public_ip={public_ip} failed=\"{int(result['failed'])}\","
-                f"loss=\"{loss}\",avg_rtt=\"{avg_rtt}\",jitter=\"{jitter}\" {nanoseconds}"
+                f"loss=\"{loss}\",avg_rtt=\"{avg_rtt}\",jitter=\"{jitter}\","
+                f"jitter_pct=\"{jitter_pct}\" {nanoseconds}"
             )
 
 
