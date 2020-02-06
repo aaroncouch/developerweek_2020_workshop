@@ -2,7 +2,7 @@
 # Written By: Aaron Couch
 # Contributions By:
 # Date: 2020-01-29
-# Updated On: 2020-02-05
+# Updated On: 2020-02-06
 # Python Version: 3.7.3
 # pylint: disable=locally-disabled, missing-docstring
 
@@ -129,14 +129,13 @@ class PingClient:
         mp_pool.join()
         return results
 
+
 def calc_jitter(latency_values):
     jitter_values = []
-    for (index, latency) in enumerate(latency_values):
-        try:
-            jitter_values.append(abs(latency - latency_values[index + 1]))
-        except IndexError:
-            pass
+    for (index, latency) in enumerate(latency_values[:-1]):
+        jitter_values.append(abs(latency - latency_values[index + 1]))
     return sum(jitter_values) / (len(latency_values) - 1)
+
 
 def get_public_ip():
     try:
@@ -145,6 +144,7 @@ def get_public_ip():
         return response.text.strip()
     except requests.exceptions.RequestException:
         return "Unknown"
+
 
 def get_cmd_args():
     parser = argparse.ArgumentParser()
@@ -169,31 +169,45 @@ def main():
         scouter_data=(cmd_args["scouter_secret"], cmd_args["scouter_port"]),
     )
     nanoseconds = f"{time.time()*1000000000:.0f}"
-    results = client.ping(dst=cmd_args["dst"], dst_pops=cmd_args["dst_pops"])
-    for item in results:
-        src_workload_slug = item[0]
-        src_workload_pop = client.workload_instances[src_workload_slug]["pop"]
-        for result in item[1]["ping"]:
+    data = client.ping(dst=cmd_args["dst"], dst_pops=cmd_args["dst_pops"])
+    for entry in data:
+        src_slug = entry[0]
+        src_pop = client.workload_instances[src_slug]["pop"]
+        for result in entry[1]["ping"]:
             result = result["result"]
+            # Set defaults.
+            rtt = {}
+            reply_fields = []
+            failed = int(result["failed"])
+            loss_pct = result["loss"]
             dst = result["dst"]
             dst_pop = "Unknown"
-            avg_rtt = "9999.999"
-            jitter = "0.0"
+            avg_rtt_ms = "9999.9"
+            jitter_ms = "0.0"
             jitter_pct = "100.0"
-            if not result["failed"]:
-                avg_rtt = result["rtt"]["avg"]
-                jitter = calc_jitter([reply["rtt_ms"] for reply in result["replies"]])
-                jitter_pct = (float(jitter)/float(avg_rtt)) * 100
-            loss = result["loss"].replace("%", "")
+            # Check if the ping resulted in a failure; if not, update defaults.
+            if not failed:
+                # Average Ping RTT across all received packets in milliseconds.
+                avg_rtt_ms = result["rtt"]["avg"]
+                rtt = {reply["seq"]: reply["rtt_ms"] for reply in result["replies"]}
+                # Calculate jitter_ms based on all rtt_ms values from the replies.
+                jitter_ms = calc_jitter(list(rtt.values()))
+                # Calculate jitter_pct.
+                jitter_pct = (float(jitter_ms) / float(avg_rtt_ms)) * 100
+            for seq in range(5):
+                rtt_ms = "9999.9"
+                if seq in rtt:
+                    rtt_ms = rtt[seq]
+                reply_fields.append(f'reply_{seq}_ms="{rtt_ms}"')
             if cmd_args["dst"] is None:
                 for value in client.workload_instances.values():
                     if value["ip_addr"] == dst:
                         dst_pop = value["pop"]
             print(
-                f"ping,src_slug={src_workload_slug},src_pop={src_workload_pop},dst={dst},"
-                f"dst_pop={dst_pop},public_ip={public_ip} failed=\"{int(result['failed'])}\","
-                f"loss=\"{loss}\",avg_rtt=\"{avg_rtt}\",jitter=\"{jitter}\","
-                f"jitter_pct=\"{jitter_pct}\" {nanoseconds}"
+                f"ping,src_slug={src_slug},src_pop={src_pop},dst={dst},dst_pop={dst_pop},"
+                f'public_ip={public_ip} failed="{failed}",loss_pct="{loss_pct}",'
+                f'avg_rtt="{avg_rtt_ms}",jitter_ms="{jitter_ms}",jitter_pct="{jitter_pct}",'
+                f"{','.join(reply_fields)} {nanoseconds}"
             )
 
 
