@@ -15,8 +15,8 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 2,
-  "iteration": 1580493015675,
+  "id": 1,
+  "iteration": 1581370726227,
   "links": [],
   "panels": [
     {
@@ -24,7 +24,7 @@
       "datasource": "metricsdb",
       "defaultPattern": {
         "bgColors": "green|yellow|orange|red",
-        "bgColors_overrides": "undefined->green",
+        "bgColors_overrides": "0->red",
         "clickable_cells_link": "http://$public_ip:3000/d/spaHVqyZz/mesh-detail?refresh=1m&orgId=1&var-src_pop=_row_name_&var-dst_pop=_col_name_",
         "col_name": "_1_",
         "decimals": "0",
@@ -33,7 +33,7 @@
         "delimiter": ".",
         "displayTemplate": "_value_",
         "enable_bgColor": true,
-        "enable_bgColor_overrides": false,
+        "enable_bgColor_overrides": true,
         "enable_clickable_cells": true,
         "enable_textColor": false,
         "enable_textColor_overrides": false,
@@ -95,7 +95,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "select mean(avg_rtt) from ping where $timeFilter and dst_pop != 'Unknown' group by dst_pop, src_pop\n",
+          "query": "select mean(avg_rtt_ms) from ping where $timeFilter and dst_pop != 'Unknown' group by dst_pop, src_pop\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -117,6 +117,106 @@
         }
       ],
       "title": "EdgeCompute Latency Mesh",
+      "type": "yesoreyeram-boomtable-panel"
+    },
+    {
+      "activePatternIndex": 0,
+      "datasource": "metricsdb",
+      "defaultPattern": {
+        "bgColors": "green|yellow|orange|red",
+        "bgColors_overrides": "undefined->green",
+        "clickable_cells_link": "http://$public_ip:3000/d/spaHVqyZz/mesh-detail?refresh=1m&orgId=1&var-src_pop=_row_name_&var-dst_pop=_col_name_",
+        "col_name": "_1_",
+        "decimals": "0",
+        "defaultBGColor": "",
+        "defaultTextColor": "black",
+        "delimiter": ".",
+        "displayTemplate": "_value_",
+        "enable_bgColor": true,
+        "enable_bgColor_overrides": false,
+        "enable_clickable_cells": true,
+        "enable_textColor": false,
+        "enable_textColor_overrides": false,
+        "enable_time_based_thresholds": false,
+        "enable_transform": false,
+        "enable_transform_overrides": false,
+        "filter": {
+          "value_above": "",
+          "value_below": ""
+        },
+        "format": "percent",
+        "name": "Default Pattern",
+        "null_color": "darkred",
+        "null_textcolor": "black",
+        "null_value": "undefined",
+        "pattern": "*",
+        "row_col_wrapper": "_",
+        "row_name": "_0_",
+        "textColors": "black|black|black|black",
+        "textColors_overrides": "0->red|2->green|1->yellow",
+        "thresholds": "4,5,6",
+        "time_based_thresholds": [],
+        "tooltipTemplate": "Series : _series_ <br/>Row Name : _row_name_ <br/>Col Name : _col_name_ <br/>Value : _value_",
+        "transform_values": "_value_|_value_|_value_",
+        "transform_values_overrides": "0->down|1->up",
+        "valueName": "current"
+      },
+      "default_title_for_rows": "Metric",
+      "gridPos": {
+        "h": 15,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 4,
+      "links": [],
+      "patterns": [],
+      "row_col_wrapper": "_",
+      "sorting_props": {
+        "col_index": -1,
+        "direction": "desc"
+      },
+      "targets": [
+        {
+          "alias": "$tag_src_pop.$tag_dst_pop",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "select mean(jitter_pct) from ping where $timeFilter and dst_pop != 'Unknown' group by dst_pop, src_pop\n",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
+        }
+      ],
+      "title": "EdgeCompute Jitter PCT Mesh",
       "type": "yesoreyeram-boomtable-panel"
     },
     {
@@ -154,7 +254,7 @@
         "row_name": "_0_",
         "textColors": "black|black|black|black",
         "textColors_overrides": "0->red|2->green|1->yellow",
-        "thresholds": "50,75,100",
+        "thresholds": "2,4,6",
         "time_based_thresholds": [],
         "tooltipTemplate": "Series : _series_ <br/>Row Name : _row_name_ <br/>Col Name : _col_name_ <br/>Value : _value_",
         "transform_values": "_value_|_value_|_value_",
@@ -166,7 +266,7 @@
         "h": 15,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 30
       },
       "id": 3,
       "links": [],
@@ -195,7 +295,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "select mean(loss) from ping where $timeFilter and dst_pop != 'Unknown' group by dst_pop, src_pop\n",
+          "query": "select mean(loss_pct) from ping where $timeFilter and dst_pop != 'Unknown' group by dst_pop, src_pop\n",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -220,7 +320,7 @@
       "type": "yesoreyeram-boomtable-panel"
     }
   ],
-  "refresh": "60s",
+  "refresh": "1m",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
@@ -229,8 +329,8 @@
       {
         "allValue": null,
         "current": {
-          "text": "151.139.188.43",
-          "value": "151.139.188.43"
+          "text": "151.139.188.41",
+          "value": "151.139.188.41"
         },
         "datasource": "metricsdb",
         "hide": 2,
@@ -258,7 +358,16 @@
   },
   "timepicker": {
     "refresh_intervals": [
-      "60s"
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
     ],
     "time_options": [
       "5m",
@@ -275,5 +384,5 @@
   "timezone": "",
   "title": "Edge Compute Performance Mesh",
   "uid": "RD4Z73yZz",
-  "version": 4
+  "version": 16
 }
