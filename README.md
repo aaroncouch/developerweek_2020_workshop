@@ -369,7 +369,7 @@ https://control.stackpath.com/stacks/developerweek-2020-2d2516/compute/workloads
 
 In the above case my `Stack slug` is `developerweek-2020-2d2516` and my `Workload ID` is `dd075d90-e7ae-4724-aea8-dde86829e069`.
 
-After getting all of that information, let's add them as environement variables so we don't have to paste things ad nauseam:
+After getting all of that information, let's add them as environment variables so we don't have to paste things ad nauseam:
 
 ```shell
 sudo vi /etc/default/telegraf
@@ -583,9 +583,9 @@ Time to query our database! Let's add the following simple query to get the aver
 latency between all of our `Global Scouter API Workload` instances:
 
 ```sql
-SELECT MEAN("avg_rtt_ms") 
-FROM "ping" 
-WHERE $timeFilter AND "dst_pop" != 'Unknown' 
+SELECT MEAN("avg_rtt_ms")
+FROM "ping"
+WHERE $timeFilter AND "dst_pop" != 'Unknown'
 GROUP BY "dst_pop", "src_pop";
 ```
 
