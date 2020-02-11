@@ -47,7 +47,7 @@ class Scouter:
             api_token = data["access_token"]
         except requests.exceptions.RequestException as error:
             Scouter._api_error_handler(
-                f"Failed to generate an SP2.0 API token. Error: {str(error)}", response.json()
+                f"Failed to generate an StackPath API token. Error: {str(error)}", response.json()
             )
         return api_token
 
@@ -140,7 +140,7 @@ class Scouter:
 
 def get_cmd_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--stack-id", type=str, required=True)
+    parser.add_argument("--stack-slug", type=str, required=True)
     parser.add_argument("--workload-id", type=str, required=True)
     parser.add_argument("--client-id", type=str, required=True)
     parser.add_argument("--client-secret", type=str, required=True)
@@ -229,7 +229,7 @@ def main():
     public_ip = get_public_ip()
     client = Scouter(
         client_credentials=(cmd_args["client_id"], cmd_args["client_secret"]),
-        account_data=(cmd_args["stack_id"], cmd_args["workload_id"]),
+        account_data=(cmd_args["stack_slug"], cmd_args["workload_id"]),
         scouter_data=(cmd_args["scouter_secret"], cmd_args["scouter_port"]),
     )
     nanoseconds = f"{time.time()*1000000000:.0f}"
