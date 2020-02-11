@@ -398,7 +398,7 @@ actively running Scouter instances for the given workload and executes ICMP ping
 Let's go ahead and copy this custom script over to `/usr/bin/` so Telegraf can access it:
 
 ```shell
-sudo cp ~/developerweek_2020_workshop/resources/scouter_ping.py /usr/bin/
+sudo cp ~/developerweek_2020_workshop/resources/scouter_client.py /usr/bin/
 ```
 
 Now let's setup `/etc/telegraf/telegraf.conf` so we can actually start collecting some performance
@@ -506,10 +506,10 @@ The resulting query will look something like this:
 ```SQL
 > SELECT * FROM "ping" LIMIT 2;
 name: ping
-time                avg_rtt dst           dst_pop failed loss public_ip      src_pop src_slug
-----                ------- ---           ------- ------ ---- ---------      ------- --------
-1580487181000000000 1.154   1.1.1.1       Unknown 0      0    151.139.188.43 ams     global-scouter-api-workload-global-ams-0
-1580487181000000000 113.432 151.139.87.14 fra     0      0    151.139.188.43 yyz     global-scouter-api-workload-global-yyz-0
+time                avg_rtt_ms dst            dst_pop failed jitter_ms          jitter_pct         loss_pct probe_0_rtt_ms     probe_1_rtt_ms     probe_2_rtt_ms     probe_3_rtt_ms     probe_4_rtt_ms     public_ip      src_pop src_slug
+----                ---------- ---            ------- ------ ---------          ----------         -------- --------------     --------------     --------------     --------------     --------------     ---------      ------- --------
+1581131071000000000 157.045    151.139.124.47 sea     0      2.0546913146972656 1.3083455790997904 0        158.5826873779297  154.07156944274902 157.3312282562256  157.46045112609863 157.77921676635742 151.139.188.41 ams     scouter-api-workload-premade-global-ams-0
+1581131071000000000 115.631    151.139.87.54  fra     0      2.6592016220092773 2.299730714089887  0        115.62943458557129 114.58086967468262 114.43591117858887 119.12870407104492 114.37821388244629 151.139.188.41 yyz     scouter-api-workload-premade-global-yyz-0
 ```
 
 <a name="workshop_guide_pt_5"></a>
@@ -590,7 +590,7 @@ Time to query our database! Let's add the following simple query to get the aver
 latency between all of our `Global Scouter API Workload` instances:
 
 ```SQL
-SELECT MEAN("avg_rtt") FROM "ping" WHERE $timeFilter AND "dst_pop" != 'Unknown' GROUP BY "dst_pop", "src_pop";
+SELECT MEAN("avg_rtt_ms") FROM "ping" WHERE $timeFilter AND "dst_pop" != 'Unknown' GROUP BY "dst_pop", "src_pop";
 ```
 
 Let's also setup the `ALIAS BY` field to be used in table formatting next:
