@@ -1,6 +1,6 @@
 # DeveloperWeek 2020 Workshop
 
-This workshop s the steps required to deploy a lightweight global monitoring stack via
+This workshop covers the steps required to deploy a lightweight global monitoring stack via
 StackPath's Edge Compute platform and recently open-sourced API project, [Scouter](https://github.com/stackpath/scouter/).
 
 * [Getting Started](#getting_started)
