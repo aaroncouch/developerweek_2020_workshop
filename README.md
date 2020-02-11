@@ -34,6 +34,8 @@ To follow this guide please register and create a StackPath 2.0 account.
 
 * [StackPath](https://control.stackpath.com/register/)
 
+[StackPath offers a $100 credit to new signups!](https://www.stackpath.com/promo/computing100/)
+
 You will also need to register an account with MaxMind to get access to their GeoLite2 databases.
 
 * [MaxMind](https://www.maxmind.com/en/geolite2/signup)
@@ -704,7 +706,7 @@ Let's do a quick recap of what we've done.
 
 We've deployed two `Workloads` within StackPath's Edge Compute platform.
 
-The first was our `Metric Collection Workload` that's being used to collect, aggregate and write our performance metrics to our local database as well as visualize that data via `Grafana`.
+The first was our `Metric Collection Workload` that's being used to collect, aggregate and write our performance metrics via `Telegraf` to our local `InfluxDB` metricsdb as well as visualize that data via `Grafana`.
 
 The second workload is our globally deployed `Global Scouter API Workload` that's being used to execute both `ping` and `traceroute` remotely via the [Scouter](https://github.com/stackpath/scouter) API container.
 
