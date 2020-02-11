@@ -183,8 +183,8 @@ def serialize_ping_result(result):
     }
     if not result["failed"]:
         successful_probe_rtt_ms = {reply["seq"]: reply["rtt_ms"] for reply in result["replies"]}
-        # ICMP will sometimes return negative RTT values. I believe this is due to NTP.
-        # Remove negative RTT values, if any, and create a new list.
+        # ICMP will sometimes return negative RTT values. This is due to the bug reported in
+        # https://github.com/secdev/scapy/issues/2277. This will be fixed in Scapy v2.4.4.
         positive_rtt_ms = [rtt_ms for rtt_ms in successful_probe_rtt_ms.values() if rtt_ms >= 0]
         data["fields"]["avg_rtt_ms"] = sum(positive_rtt_ms) / len(positive_rtt_ms)
         data["fields"]["jitter_ms"] = calc_jitter(positive_rtt_ms)
