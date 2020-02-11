@@ -64,8 +64,7 @@ In this workshope Edge Compute will be utilized in two ways:
 <a name="scouter_api"></a>
 #### Scouter API
 
-The Scouter API project will allow us to perform remote network diagnostics, in this case
-an ICMP ping to record network latencies values over time.
+The Scouter API project will allow us to perform remote network diagnostics, in this case ICMP ping and traceroute so we can record historical latency and routing data.
 
 <a name="telegraf"></a>
 #### Telegraf
@@ -77,7 +76,7 @@ data to InfluxDB.
 <a name="influxdb"></a>
 #### InfluxDB
 
-InfluxDB will be our time series datastore. Since InfluxDB work very well with Telegraf and Grafana,
+InfluxDB will be our time series datastore. Since InfluxDB works very well with Telegraf and Grafana,
 the choice was very easy to make.
 
 <a name="grafana"></a>
@@ -368,7 +367,7 @@ sudo yum localinstall telegraf-1.8.3-1.x86_64.rpm
 
 Before we start the agent, let's get quickly setup to run the custom Scouter data collection script.
 
-We're going to need to generate an SP2.0 `Client ID` and `Client Secret` and note them. This can easily done from the SP2.0 `Dashboard`'s `API Access` section.
+We're going to need to generate an SP2.0 `Client ID` and `Client Secret` and note them. This can easily be done from the SP2.0 `Dashboard`'s `API Access` section.
 
 We're also going to need to take note of our `Global Scouter API Workload`'s associated Stack and Workload IDs. This can be pulled from the `Overview` page's URL. Here's and example:
 
@@ -619,6 +618,9 @@ Navigate to the `Patterns` tab and modify the following field values:
   * **Thresholds**: `250,500,1000`
   * **Change BG Color based on thresholds?**: :white_check_mark:
   * **BG Colors for thresholds**: `green|yellow|orange|red`
+* *Overrides*
+  * **Enable BG Color overrides for specific values?**: :white_check_mark:
+  * **BG Color Overrides**: `0->red`
 
 Once modified our `Patterns` tab should look like this:
 
@@ -662,7 +664,6 @@ Go ahead and select `Import`.
 
 You should now see the same exact panel we created in the previous section but also two additional
 panels, `EdgeCompute Jitter PCT Mesh` and `EdgeCompute Packet Loss Mesh`. These are very similar to our `EdgeCompute Latency Mesh` but the metrics being visualized are `jitter_pct` and `loss_pct` respectively.
-
 
 ![grafana_edge_compute_performance_mesh](/images/grafana_edge_compute_performance_mesh.png)
 
