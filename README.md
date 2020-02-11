@@ -18,6 +18,8 @@ StackPath's Edge Compute platform and recently open-sourced API project, Scouter
   * [Part 4: Installing and Configuring Telegraf on our VM](#workshop_guide_pt_4)
   * [Part 5: Installing and Configuring Grafana on our VM](#workshop_guide_pt_5)
   * [Part 6: Exploring our Performance Data!](#workshop_guide_pt_6)
+* [Workshop Overview](#workshop_overview)
+  * [Recap](#workshop_recap)
 
 <a name="getting_started"></a>
 ## Getting Started
@@ -658,9 +660,9 @@ You should now see the following:
 
 Go ahead and select `Import`.
 
-You should now see the same exact panel we created in the previous section but also an additional
-one, the `EdgeCompute Packet Loss Mesh`. This is very similar to our ping latency mesh but the
-metric being visualized this time is packet loss.
+You should now see the same exact panel we created in the previous section but also two additional
+panels, `EdgeCompute Jitter PCT Mesh` and `EdgeCompute Packet Loss Mesh`. These are very similar to our `EdgeCompute Latency Mesh` but the metrics being visualized are `jitter_pct` and `loss_pct` respectively.
+
 
 ![grafana_edge_compute_performance_mesh](/images/grafana_edge_compute_performance_mesh.png)
 
@@ -676,14 +678,33 @@ Our entire monitoring stack is now up and running and we're successfully visuali
 performance data being pulled remotely from around the globe via Scouter, or at least I hope we are!
 
 Let's do a quick deep dive into a small set of data. Let's say that I want to see how well the
-interconnectivity between our HKG (Hong Kong) and our JFK (New York) instances look:
+interconnectivity between our SJC (San Jose) and our JFK (New York) instances look:
 
-![grafana_explore_mesh_hkg_jfk](/images/grafana_explore_mesh_hkg_jfk.png)
+![grafana_explore_mesh_sjc_jfk](/images/grafana_explore_mesh_sjc_jfk.png)
 
 Clicking on the cell will redirect us to our `Mesh Detail` page with both the correct `src_pop`
 and `dst_pop` variables set to `hkg` and `jfk` respectively:
 
-![grafana_export_mesh_detail_hkg_jfk](/images/grafana_export_mesh_detail_hkg_jfk.png)
+![grafana_explore_mesh_detail_sjc_jfk](/images/grafana_explore_mesh_detail_sjc_jfk.png)
 
-On the `Mesh Detail` page we can explore our hisorical ping latency and packet loss data and
-see how well we performed over time!
+On the `Mesh Detail` page we can explore of Ping and Traceroute historical data. For instance we could monitor for route changes and see if any metrics change, like `avg_rtt_ms` or `jitter_ms`, for better or worse!
+
+<a name="workshop_overview"></a>
+## Workshop Overview
+
+So that's it! We've successfully deployed a our own, globally-scalled, monitoring stack to StackPath's Edge Comppute platform.
+
+We're now in a position to monitor for or even alert on any potential performance impacting events.
+
+<a name="workshop_recap"></a>
+### Recap
+
+Let's do a quick recap of what we've done.
+
+We've deployed two `Workloads` within StackPath's Edge Compute platform.
+
+The first was our `Metric Collection Workload` that's being used to collect, aggregate and write our performance metrics to our local database as well as visualize that data via `Grafana`.
+
+The second workload is our globally deployed `Global Scouter API Workload` that's being used to execute both `ping` and `traceroute` remotely via the [Scouter](https://github.com/stackpath/scouter) API container.
+
+All of this is possible thanks to all of the open-sourced software available to us!
