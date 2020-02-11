@@ -449,8 +449,8 @@ vi ~/developerweek_2020_workshop/resources/telegraf.conf
     timeout = "60s"
     data_format = "influx"
 
-# Made a second input for the traceroute utility so that a different interval/timeout can be used
-# if required.
+# Traceroute takes a bit longer to finish compared to Ping. Added a separate input block with its
+# own interval and timeout of 120s to account for that.
 [[inputs.exec]]
     commands = [
       'python3 /usr/bin/scouter_client.py --stack-id="$SP_STACK_ID" --workload-id="$SCOUTER_WORKLOAD_ID" --client-id="$SP_API_CLIENT_ID" --client-secret="$SP_API_CLIENT_SECRET" --scouter-secret="$SCOUTER_SECRET" --utility="traceroute"'
