@@ -32,6 +32,10 @@ To follow this guide please register and create a StackPath 2.0 account.
 
 * [StackPath](https://control.stackpath.com/register/)
 
+You will also need to register an account with MaxMind to get access to their GeoLite2 databases.
+
+* [MaxMind](https://www.maxmind.com/en/geolite2/signup)
+
 <a name="core_components"></a>
 ### Core Components
 
@@ -95,35 +99,93 @@ portal.
 
 #### Creating the Workload
 
+From the `Dashboard` select `Create Workload`. The first section presented to you will be `Name & Type`. In this section we will specify the name of our workload as well as its type.
+
 ![vm_name_and_type](/images/vm_name_and_type.png)
+
+* **Name**: `Metric Collection Workload`
+
+* **Workload Type**: `VM`
+
+* **Image**: `CentOS 7`
+
+Click `Continue to Settings`. From here we'll open port 22/TCP so we can access our VM via SSH and we need to specify a `First Boot SSH Key(s)`, please copy/paste your `~/.ssh/id_rsa.pub` here. If you do not have an SSH key to provide, please run the following commands to generate one:
+
+```shell
+ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub
+```
 
 ![vm_workload_settings](/images/vm_workload_settings.png)
 
+* **Public Ports**: `22/TCP`
+
+* **First Boot SSH Key(s)**: `<YOUR_ID_RSA_PUB_HERE>`
+
+Click `Continue to Spec`. Here we will specify the size, additional volumes, locations and number.
+
 ![vm_spec_storage_and_deployment](/images/vm_spec_storage_and_deployment.png)
+
+* **Spec**: `SP-4 (4 vCPU, 16 GB RAM, 25 GB Root Disk)`
+
+* **Additional Volume**
+
+    * **Mount Path**: `/var/lib/influxdb`
+    * **Size**: `25`
+
+
+* **Deployment Target**:
+
+    * **Name**: `na`
+    * **PoPs**: `San Jose`
+
+Click `Create Workload` and you'll be redirected to the following page:
 
 ![vm_quick_overview_scheduling](/images/vm_quick_overview_scheduling.png)
 
+After a short period of time the `STATUS` of our instance will change to `Running`.
+
 ![vm_quick_overview_running](/images/vm_quick_overview_running.png)
+
+Please be sure to quickly note your VM's `PUBLIC IP ADDRESS` for use later on.
 
 ![vm_information](/images/vm_information.png)
 
 #### Creating an Inbound Network Policy to Restrict Access to Grafana
 
+Before we proceed to creating our next workload let's first create an inbound rule to restrict access to Grafana to our local IP address.
+
+From our workload's `Overview` page we should also see a page called `Network Policies`. Select it and you'll see the following:
+
 ![vm_default_network_policy](/images/vm_default_network_policy.png)
+
+Before we add the new rule be sure to have your public IP ready.
 
 One easy way to get your public IP is by running the following:
 ```shell
 curl -4 icanhazip.com
 ```
 
-Take the resulting IP address and fill out the following:
+Click on `Add Inbound Rule` and create a new rule to limit access to Grafana port `3000` from our local machines.
 
 ![vm_grafana_network_policy](/images/vm_grafana_network_policy.png)
 
+* **Description**: `ALLOW GRAFANA FROM_LOCAL`
+
+* **Source**: `<YOUR_PUBLIC_IP_ADDR_HERE>`
+
+* **Action**: `Allow`
+
+* **Protocol**: `TCP`
+
+* **Port / Port Range**: `3000`
+
 #### Logging into our Workload Instance
 
+**NOTE**: Please be sure to swap the following example IP address with yours.
+
 ```shell
-ssh centos@151.139.188.43
+ssh centos@151.139.47.79
 ```
 
 #### Cloning the Workshop Repository and Setting Up Additional Dependencies
@@ -142,22 +204,72 @@ anywhere that Edge Compute is available.
 
 #### Creating the Workload
 
+Just like before with our VM, from the `Dashboard` select `Create Workload` and fill out `Name & Type`. This time we'll be using a `Container` `Workload Type` and specify the Scouter API Docker.io image and tag:
+
 ![scouter_name_and_type](/images/scouter_name_and_type.png)
+
+* **Name**: `Global Scouter API Workload`
+
+* **Workload Type**: `Container`
+
+* **Image**: `aaroncouch/scouter_api:1.0.0`
+
+Click `Continue to Settings`. Here we will specify a shared API secret for Scouter, our MMDB license key and we'll increase the default maximum test count to 30 all via environment variables.
 
 ![scouter_workload_settings](/images/scouter_workload_settings.png)
 
+* **Environment Variables**:
+
+    1. `SCOUTER_MAX_TEST_COUNT` = `30`
+
+
+* **Secret Environment Variables**:
+
+    1. `SCOUTER_API_SECRET` = `secret`
+    2. `MMDB_LICENSE_KEY` = `<YOUR_MMDB_LICENSE_KEY>`
+
+
+* **Public Ports**: `8000/TCP`
+
+Click `Continue to Spec` Here we will specify the size and location of our workload. In this section we are going to select every single available SP2.0 PoP.
+
 ![scouter_spec_storage_and_deployment](/images/scouter_spec_storage_and_deployment.png)
+
+* **Spec**: `SP-1 (1 vCPU, 2 GB RAM, 5 GB Root Disk)`
+
+* **Deployment Target**:
+
+    * **Name**: `global`
+    * **PoPs**: *Select all available PoPs*
+
+Click `Create Workload` and you'll be redirected to the following page:
 
 ![scouter_quick_overview_status](/images/scouter_quick_overview_status.png)
 
-### Modifying the Default Inbound Network Policy to Restrict Access to Grafana
+After a short amount of time all of our workload's instances will switch into a `Running` `STATUS`. In the meantime we can proceed to the next section.
+
+### Modifying the Default Inbound Network Policy to Restrict Access to Scouter
 
 Let's go ahead and quickly modify the default inbound network policy that allows port 8000/TCP
 to restrict this access to our previously created VM.
 
+From our workload's `Overview` page we should also see a page called `Network Policies`. Click it and edit the default inbound rule for 8000/TCP:
+
 ![scouter_default_network_policy_edit](/images/scouter_default_network_policy_edit.png)
 
+Now let's restrict access to the Scouter API to our `Metric Collection Workload` VM:
+
 ![scouter_telegraf_network_policy](/images/scouter_telegraf_network_policy.png)
+
+* **Description**: `ALLOW API FROM_TELEGRAF`
+
+* **Source**: `<YOUR_VM_PUBLIC_IP_HERE>`
+
+* **Action**: `Allow`
+
+* **Protocol**: `TCP`
+
+* **Port / Port Range**: `8000`
 
 ### From our Metric Collection VM; Validate that Scouter is Accessible and Working
 
@@ -254,27 +366,34 @@ sudo yum localinstall telegraf-1.8.3-1.x86_64.rpm
 
 Before we start the agent, let's get quickly setup to run the custom Scouter data collection script.
 
-First let's add a few environment variables to `/etc/default/telegraf` so we don't have to expose
-those in our telegraf.conf:
+We're going to need to generate an SP2.0 `Client ID` and `Client Secret` and note them. This can easily done from the SP2.0 `Dashboard`'s `API Access` section.
+
+We're also going to need to take note of our `Global Scouter API Workload`'s associated Stack and Workload IDs. This can be pulled from the `Overview` page's URL. Here's and example:
+
+https://control.stackpath.com/stacks/developerweek-2020-2d2516/compute/workloads/dd075d90-e7ae-4724-aea8-dde86829e069/overview
+
+In the above case my `Stack ID` is `developerweek-2020-2d2516` and my `Workload ID` is `dd075d90-e7ae-4724-aea8-dde86829e069`.
+
+After getting all of that information, let's add them as environement variables so we don't have to paste things ad nauseam:
 
 ```shell
 sudo vi /etc/default/telegraf
 ```
 
-**NOTE**: Please be sure to swap out the placeholder values seen below appropriately.
+**NOTE**: Please be sure to swap out the following placeholders with the information discussed previously.
 
 ```shell
 SP_STACK_ID='<YOUR_STACKPATH_STACK_ID>'
 SP_API_CLIENT_ID='<YOUR_STACKPATH_API_CLIENT_ID>'
 SP_API_CLIENT_SECRET='<YOUR_STACKPATH_CLIENT_SECRET>'
 SCOUTER_WORKLOAD_ID='<YOUR_SCOUTER_WORKLOAD_ID>'
-SCOUTER_SECRET='<YOUR_SCOUTER_SECRET>'
+SCOUTER_SECRET='secret'
 ```
 
 For this workshop I've written a simple Python3 script that interacts with the SP2.0 API to pull
-actively running Scouter instances for the given workload and executes ICMP pings for you.
+actively running Scouter instances for the given workload and executes ICMP pings and traceroutes for you.
 
-[If you have a moment please review the custom script.](/resources/scouter_ping.py)
+[If you have a moment please review the custom script.](/resources/scouter_client.py)
 
 Let's go ahead and copy this custom script over to `/usr/bin/` so Telegraf can access it:
 
@@ -323,17 +442,28 @@ vi ~/developerweek_2020_workshop/resources/telegraf.conf
 # Configuration of our custom Scouter API data collection script.
 [[inputs.exec]]
     commands = [
-      'python3 /usr/bin/scouter_ping.py --stack-id="$SP_STACK_ID" --workload-id="$SCOUTER_WORKLOAD_ID" --client-id="$SP_API_CLIENT_ID" --client-secret="$SP_API_CLIENT_SECRET" --scouter-secret="$SCOUTER_SECRET"',
-      'python3 /usr/bin/scouter_ping.py --stack-id="$SP_STACK_ID" --workload-id="$SCOUTER_WORKLOAD_ID" --client-id="$SP_API_CLIENT_ID" --client-secret="$SP_API_CLIENT_SECRET" --scouter-secret="$SCOUTER_SECRET" --dst="1.1.1.1"'
+      'python3 /usr/bin/scouter_client.py --stack-id="$SP_STACK_ID" --workload-id="$SCOUTER_WORKLOAD_ID" --client-id="$SP_API_CLIENT_ID" --client-secret="$SP_API_CLIENT_SECRET" --scouter-secret="$SCOUTER_SECRET"'
     ]
-    timeout = "30s"
+    timeout = "60s"
+    data_format = "influx"
+
+# Made a second input for the traceroute utility so that a different interval/timeout can be used
+# if required.
+[[inputs.exec]]
+    commands = [
+      'python3 /usr/bin/scouter_client.py --stack-id="$SP_STACK_ID" --workload-id="$SCOUTER_WORKLOAD_ID" --client-id="$SP_API_CLIENT_ID" --client-secret="$SP_API_CLIENT_SECRET" --scouter-secret="$SCOUTER_SECRET" --utility="traceroute"'
+    ]
+    interval = "120s"
+    timeout = "120s"
     data_format = "influx"
 
 # Configuration of metric data type conversion.
 [[processors.converter]]
     # A few fields returned by the custom script need to be floats.
     [processors.converter.fields]
-      float = ["avg_rtt", "loss"]
+      float = ["avg_rtt_ms", "loss_pct", "jitter_ms", "jitter_pct", "probe_0_rtt_ms", "probe_1_rtt_ms", "probe_2_rtt_ms", "probe_3_rtt_ms", "probe_4_rtt_ms", "final_hop_rtt_ms"]
+      integer = ["final_hop_ttl"]
+
 ```
 
 Once you're done editing the configuration file; proceed with copying it to `/etc/telegraf/telegraf.conf` and finally start the server agent:

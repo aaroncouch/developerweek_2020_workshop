@@ -1,8 +1,8 @@
-# File: scouter_ping.py
+# File: scouter_client.py
 # Written By: Aaron Couch
 # Contributions By:
-# Date: 2020-01-29
-# Updated On: 2020-02-06
+# Date: 2020-02-06
+# Updated On: 2020-02-10
 # Python Version: 3.7.3
 # pylint: disable=locally-disabled, missing-docstring
 
@@ -16,12 +16,13 @@ import requests
 SP_API_BASE_URL = "https://gateway.stackpath.com"
 
 
-class PingClient:
+class Scouter:
     def __init__(self, client_credentials, account_data, scouter_data):
         self._workload_instances = self._get_workload_instances(client_credentials, account_data)
         self._scouter_secret = scouter_data[0]
         self._scouter_port = scouter_data[1]
         self._dst = None
+        self._utility = None
 
     @property
     def workload_instances(self):
@@ -45,7 +46,7 @@ class PingClient:
             data = response.json()
             api_token = data["access_token"]
         except requests.exceptions.RequestException as error:
-            PingClient._api_error_handler(
+            Scouter._api_error_handler(
                 f"Failed to generate an SP2.0 API token. Error: {str(error)}", response.json()
             )
         return api_token
@@ -53,7 +54,7 @@ class PingClient:
     @staticmethod
     def _get_workload_instances(client_credentials, account_data):
         instances = {}
-        api_token = PingClient._get_api_token(client_credentials)
+        api_token = Scouter._get_api_token(client_credentials)
         headers = {"Accept": "application/json", "Authorization": f"Bearer {api_token}"}
         endpoint = f"/workload/v1/stacks/{account_data[0]}/workloads/{account_data[1]}/instances"
         base_url = f"{SP_API_BASE_URL}{endpoint}"
@@ -76,7 +77,7 @@ class PingClient:
                         }
                 has_next_page = data["pageInfo"]["hasNextPage"]
             except requests.exceptions.RequestException as error:
-                PingClient._api_error_handler(
+                Scouter._api_error_handler(
                     f"Failed to get workload instances. Error: {str(error)}", response.json()
                 )
         return instances
@@ -104,18 +105,25 @@ class PingClient:
                 if response.json():
                     return response.json()
                 return str(error)
+            time.sleep(1)
         return data["results"]
 
-    def _mp_ping_worker(self, instance):
+    def _mp_worker(self, instance):
         src_ip = self._workload_instances[instance]["ip_addr"]
         url = f"http://{src_ip}:{self._scouter_port}/api/v1.0/tests"
-        payload = {"ping": []}
-        for dst in self._dst:
-            payload["ping"].append({"dst": dst, "count": 5})
+        if self._utility == "ping":
+            payload = {"ping": []}
+            for dst in self._dst:
+                payload["ping"].append({"dst": dst, "count": 5})
+        elif self._utility == "traceroute":
+            payload = {"traceroute": []}
+            for dst in self._dst:
+                payload["traceroute"].append({"dst": dst})
         results = self._scouter_api_handler(url, payload)
         return (instance, results)
 
-    def ping(self, dst, dst_pops):
+    def run(self, dst, dst_pops, utility="ping"):
+        self._utility = utility
         if dst is None:
             self._dst = []
             for value in self._workload_instances.values():
@@ -124,10 +132,25 @@ class PingClient:
         else:
             self._dst = dst
         mp_pool = multiprocessing.Pool(len(self._workload_instances.keys()))
-        results = mp_pool.map(self._mp_ping_worker, self._workload_instances)
+        results = mp_pool.map(self._mp_worker, self._workload_instances)
         mp_pool.close()
         mp_pool.join()
         return results
+
+
+def get_cmd_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--stack-id", type=str, required=True)
+    parser.add_argument("--workload-id", type=str, required=True)
+    parser.add_argument("--client-id", type=str, required=True)
+    parser.add_argument("--client-secret", type=str, required=True)
+    parser.add_argument("--scouter-secret", type=str, required=True)
+    parser.add_argument("--scouter-port", type=int, default=8000)
+    parser.add_argument("--utility", type=str, default="ping", choices=["ping", "traceroute"])
+    dst_group = parser.add_mutually_exclusive_group()
+    dst_group.add_argument("--dst", nargs="+")
+    dst_group.add_argument("--dst-pops", nargs="+", default=["all"])
+    return vars(parser.parse_args())
 
 
 def calc_jitter(latency_values):
@@ -146,69 +169,96 @@ def get_public_ip():
         return "Unknown"
 
 
-def get_cmd_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--stack-id", type=str, required=True)
-    parser.add_argument("--workload-id", type=str, required=True)
-    parser.add_argument("--client-id", type=str, required=True)
-    parser.add_argument("--client-secret", type=str, required=True)
-    parser.add_argument("--scouter-secret", type=str, required=True)
-    parser.add_argument("--scouter-port", type=int, default=8000)
-    dst_group = parser.add_mutually_exclusive_group()
-    dst_group.add_argument("--dst", nargs="+")
-    dst_group.add_argument("--dst-pops", nargs="+", default=["all"])
-    return vars(parser.parse_args())
+def serialize_ping_result(result):
+    successful_probe_rtt_ms = {}
+    data = {
+        "tags": {"dst": result["dst"]},
+        "fields": {
+            "failed": int(result["failed"]),
+            "loss_pct": result["loss"],
+            "avg_rtt_ms": 0.0,
+            "jitter_ms": 0.0,
+            "jitter_pct": 100.0,
+        },
+    }
+    if not result["failed"]:
+        successful_probe_rtt_ms = {reply["seq"]: reply["rtt_ms"] for reply in result["replies"]}
+        # ICMP will sometimes return negative RTT values. I believe this is due to NTP.
+        # Remove negative RTT values, if any, and create a new list.
+        positive_rtt_ms = [rtt_ms for rtt_ms in successful_probe_rtt_ms.values() if rtt_ms >= 0]
+        data["fields"]["avg_rtt_ms"] = sum(positive_rtt_ms) / len(positive_rtt_ms)
+        data["fields"]["jitter_ms"] = calc_jitter(positive_rtt_ms)
+        data["fields"]["jitter_pct"] = (
+            float(data["fields"]["jitter_ms"]) / float(data["fields"]["avg_rtt_ms"])
+        ) * 100
+    for seq in range(5):
+        rtt_ms = 0.0
+        if seq in successful_probe_rtt_ms:
+            rtt_ms = successful_probe_rtt_ms[seq]
+        data["fields"][f"probe_{seq}_rtt_ms"] = rtt_ms
+    return data
+
+
+def serialize_traceroute_result(result):
+    hops = []
+    data = {
+        "tags": {"dst": result["dst"], "proto": result["proto"], "dport": result["dport"]},
+        "fields": {
+            "failed": int(result["failed"]),
+            "final_hop_rtt_ms": 0.0,
+            "final_hop_ttl": 32,
+            "as_path": None,
+        },
+    }
+    for hop in result["trace"]:
+        if not hop["no_response"]:
+            data["fields"]["final_hop_rtt_ms"] = hop["rtt_ms"]
+            data["fields"]["final_hop_ttl"] = hop["ttl"]
+            if hop["asn"]:
+                hops.append(str(hop["asn"]))
+            else:
+                hops.append("*")
+        else:
+            hops.append("*")
+    data["fields"]["as_path"] = " ".join(hops)
+    return data
 
 
 def main():
     cmd_args = get_cmd_args()
     public_ip = get_public_ip()
-    client = PingClient(
+    client = Scouter(
         client_credentials=(cmd_args["client_id"], cmd_args["client_secret"]),
         account_data=(cmd_args["stack_id"], cmd_args["workload_id"]),
         scouter_data=(cmd_args["scouter_secret"], cmd_args["scouter_port"]),
     )
     nanoseconds = f"{time.time()*1000000000:.0f}"
-    data = client.ping(dst=cmd_args["dst"], dst_pops=cmd_args["dst_pops"])
+    data = client.run(
+        dst=cmd_args["dst"], dst_pops=cmd_args["dst_pops"], utility=cmd_args["utility"]
+    )
     for entry in data:
         src_slug = entry[0]
         src_pop = client.workload_instances[src_slug]["pop"]
-        for result in entry[1]["ping"]:
-            result = result["result"]
-            # Set defaults.
-            rtt = {}
-            reply_fields = []
-            failed = int(result["failed"])
-            loss_pct = result["loss"]
-            dst = result["dst"]
-            dst_pop = "Unknown"
-            avg_rtt_ms = "9999.9"
-            jitter_ms = "0.0"
-            jitter_pct = "100.0"
-            # Check if the ping resulted in a failure; if not, update defaults.
-            if not failed:
-                # Average Ping RTT across all received packets in milliseconds.
-                avg_rtt_ms = result["rtt"]["avg"]
-                rtt = {reply["seq"]: reply["rtt_ms"] for reply in result["replies"]}
-                # Calculate jitter_ms based on all rtt_ms values from the replies.
-                jitter_ms = calc_jitter(list(rtt.values()))
-                # Calculate jitter_pct.
-                jitter_pct = (float(jitter_ms) / float(avg_rtt_ms)) * 100
-            for seq in range(5):
-                rtt_ms = "9999.9"
-                if seq in rtt:
-                    rtt_ms = rtt[seq]
-                reply_fields.append(f'reply_{seq}_ms="{rtt_ms}"')
-            if cmd_args["dst"] is None:
-                for value in client.workload_instances.values():
-                    if value["ip_addr"] == dst:
-                        dst_pop = value["pop"]
-            print(
-                f"ping,src_slug={src_slug},src_pop={src_pop},dst={dst},dst_pop={dst_pop},"
-                f'public_ip={public_ip} failed="{failed}",loss_pct="{loss_pct}",'
-                f'avg_rtt="{avg_rtt_ms}",jitter_ms="{jitter_ms}",jitter_pct="{jitter_pct}",'
-                f"{','.join(reply_fields)} {nanoseconds}"
-            )
+        dst_pop = "Unknown"
+        for (utility, results) in entry[1].items():
+            for result in results:
+                if utility == "ping":
+                    serialized_data = serialize_ping_result(result["result"])
+                elif utility == "traceroute":
+                    serialized_data = serialize_traceroute_result(result["result"])
+                if cmd_args["dst"] is None:
+                    for value in client.workload_instances.values():
+                        if value["ip_addr"] == serialized_data["tags"]["dst"]:
+                            dst_pop = value["pop"]
+                serialized_data["tags"]["src_slug"] = src_slug
+                serialized_data["tags"]["src_pop"] = src_pop
+                serialized_data["tags"]["dst_pop"] = dst_pop
+                serialized_data["tags"]["public_ip"] = public_ip
+                tag_str = ",".join(f"{key}={val}" for (key, val) in serialized_data["tags"].items())
+                field_str = ",".join(
+                    f'{key}="{val}"' for (key, val) in serialized_data["fields"].items()
+                )
+                print(f"{utility},{tag_str} {field_str} {nanoseconds}")
 
 
 if __name__ == "__main__":
