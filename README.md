@@ -690,7 +690,7 @@ On the `Mesh Detail` page we can explore ping and traceroute historical data. Fo
 
 So that's it! We've deployed our own globally-scaled monitoring stack to StackPath's Edge Compute platform.
 
-We're now in a position to monitor for or even alert on any potential performance impacting events.
+We're now in a position to monitor for, or even alert on, any potential performance impacting events.
 
 <a name="workshop_recap"></a>
 ### Recap
