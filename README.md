@@ -150,7 +150,7 @@ Please be sure to quickly note your VM's `PUBLIC IP ADDRESS` for use later on.
 
 #### Creating an Inbound Network Policy to Restrict Access to Grafana
 
-Before create our next workload let's first create an inbound rule to restrict access to Grafana to our local IP address.
+Before we create our next workload let's first create an inbound rule to restrict access to Grafana to our local IP address.
 
 From our workload's `Overview` page we should also see a page called `Network Policies`. Select it and you'll see the following:
 
