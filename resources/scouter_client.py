@@ -141,7 +141,7 @@ class Scouter:
 def get_cmd_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--stack-slug", type=str, required=True)
-    parser.add_argument("--workload-id", type=str, required=True)
+    parser.add_argument("--workload-slug", type=str, required=True)
     parser.add_argument("--client-id", type=str, required=True)
     parser.add_argument("--client-secret", type=str, required=True)
     parser.add_argument("--scouter-secret", type=str, required=True)
@@ -229,7 +229,7 @@ def main():
     public_ip = get_public_ip()
     client = Scouter(
         client_credentials=(cmd_args["client_id"], cmd_args["client_secret"]),
-        account_data=(cmd_args["stack_slug"], cmd_args["workload_id"]),
+        account_data=(cmd_args["stack_slug"], cmd_args["workload_slug"]),
         scouter_data=(cmd_args["scouter_secret"], cmd_args["scouter_port"]),
     )
     nanoseconds = f"{time.time()*1000000000:.0f}"

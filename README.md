@@ -363,11 +363,19 @@ Before we start the agent, let's get quickly set up to run the custom Scouter da
 
 We're going to need to generate an StackPath API `Client ID` and `Client Secret` and note them. This can easily be done from the StackPath `Dashboard`'s `API Access` section.
 
-We're also going to need to take note of our `Global Scouter API Workload`'s associated stack slug and workload ID. This can be pulled from the `Overview` page's URL. Here's an example:
+**NOTE**: The `Client Secret` is returned only **once** and is **not** stored by StackPath..
 
-https://control.stackpath.com/stacks/developerweek-2020-2d2516/compute/workloads/dd075d90-e7ae-4724-aea8-dde86829e069/overview
+We're also going to need our account's `Stack Slug` and the associated `Workload Slug` for our `Global Scouter API Workload`.
 
-In the above case my `Stack slug` is `developerweek-2020-2d2516` and my `Workload ID` is `dd075d90-e7ae-4724-aea8-dde86829e069`.
+Please navigate to the `Workloads` tab on the left so we can retrieve this information. You should see the following:
+
+![compute_workloads_page.png](/images/compute_workloads_page.png)
+
+We can easily get our current `Stack Slug` from the URL. For instance my URL is:
+
+`https://control.stackpath.com/stacks/developerweek-2020-2d2516/compute/workloads`
+
+My `Stack Slug` is `developerweek-2020-2d2516`. We can get our Scouter `Workload Slug` from the page itself. In our case this should be `global-scouter-api-workload`.
 
 After getting all of that information, let's add them as environment variables so we don't have to paste things ad nauseam:
 
@@ -378,10 +386,10 @@ sudo vi /etc/default/telegraf
 **NOTE**: Please be sure to swap out the following placeholders with the information discussed previously.
 
 ```shell
-SP_STACK_SLUG='<YOUR_STACKPATH_STACK_SLUG>'
+SP_STACK_SLUG='developerweek-2020-2d2516'
 SP_API_CLIENT_ID='<YOUR_STACKPATH_API_CLIENT_ID>'
 SP_API_CLIENT_SECRET='<YOUR_STACKPATH_CLIENT_SECRET>'
-SCOUTER_WORKLOAD_ID='<YOUR_SCOUTER_WORKLOAD_ID>'
+SCOUTER_WORKLOAD_SLUG='global-scouter-api-workload'
 SCOUTER_SECRET='secret'
 ```
 
@@ -408,7 +416,6 @@ vi ~/developerweek_2020_workshop/resources/telegraf.conf
 ```yaml
 [global_tags]
 [agent]
-  # Run inputs every 60 seconds.
   interval = "60s"
   round_interval = true
   metric_batch_size = 1000
@@ -436,16 +443,17 @@ vi ~/developerweek_2020_workshop/resources/telegraf.conf
 # Configuration of our custom Scouter API data collection script.
 [[inputs.exec]]
     commands = [
-      'python3 /usr/bin/scouter_client.py --stack-slug="$SP_STACK_SLUG" --workload-id="$SCOUTER_WORKLOAD_ID" --client-id="$SP_API_CLIENT_ID" --client-secret="$SP_API_CLIENT_SECRET" --scouter-secret="$SCOUTER_SECRET"'
+      'python3 /usr/bin/scouter_client.py --stack-slug="$SP_STACK_SLUG" --workload-slug="$SCOUTER_WORKLOAD_SLUG" --client-id="$SP_API_CLIENT_ID" --client-secret="$SP_API_CLIENT_SECRET" --scouter-secret="$SCOUTER_SECRET" --utility="ping"'
     ]
-    timeout = "60s"
+    interval "90s"
+    timeout = "90s"
     data_format = "influx"
 
 # Traceroute takes a bit longer to finish compared to Ping. Added a separate input block with its
 # own interval and timeout of 120s to account for that.
 [[inputs.exec]]
     commands = [
-      'python3 /usr/bin/scouter_client.py --stack-slug="$SP_STACK_SLUG" --workload-id="$SCOUTER_WORKLOAD_ID" --client-id="$SP_API_CLIENT_ID" --client-secret="$SP_API_CLIENT_SECRET" --scouter-secret="$SCOUTER_SECRET" --utility="traceroute"'
+      'python3 /usr/bin/scouter_client.py --stack-slug="$SP_STACK_SLUG" --workload-slug="$SCOUTER_WORKLOAD_SLUG" --client-id="$SP_API_CLIENT_ID" --client-secret="$SP_API_CLIENT_SECRET" --scouter-secret="$SCOUTER_SECRET" --utility="traceroute"'
     ]
     interval = "120s"
     timeout = "120s"
@@ -457,6 +465,7 @@ vi ~/developerweek_2020_workshop/resources/telegraf.conf
     [processors.converter.fields]
       float = ["avg_rtt_ms", "loss_pct", "jitter_ms", "jitter_pct", "probe_0_rtt_ms", "probe_1_rtt_ms", "probe_2_rtt_ms", "probe_3_rtt_ms", "probe_4_rtt_ms", "final_hop_rtt_ms"]
       integer = ["final_hop_ttl"]
+
 
 ```
 
